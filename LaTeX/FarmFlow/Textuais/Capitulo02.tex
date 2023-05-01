@@ -1,0 +1,236 @@
+\chapter{Desenvolvimento}
+    \section{Requisitos funcionais}
+        \begin{table}[!htbp]
+            \centering
+            \renewcommand{\arraystretch}{1.3}
+            \label{tab:quadro_requisitos}
+            \begin{tabular}{| L{3cm} | L{11cm} | }
+                \hline
+                \textbf{RF-01} & O Software deve coletar informações referentes ao sensor de umidade do solo.\\
+                \hline
+
+                \hline
+                \textbf{RF-02} & O Software deve controlar a cor de um led que representa o estado da umidade do solo.\\
+                \hline                   
+
+                \hline
+                \textbf{RF-03} & O Software deve controlar a irrigação do solo.\\
+                \hline
+
+                \hline
+                \textbf{RF-04} & O Software deve coletar informações referentes ao tempo de exposição à luz do solo.\\
+                \hline
+
+                \hline
+                \textbf{RF-05} & o Software deve controlar o teto retrátil.\\
+                \hline
+
+                \hline
+                \textbf{RF-06} & O Software deve enviar informações do solo para o Smart Life.\\
+                \hline
+
+            \end{tabular}
+            \vspace{2mm}
+        \end{table}
+
+    \section{Regras de negócio}
+        \begin{table}[!htbp]
+            \centering
+            \renewcommand{\arraystretch}{1.3}
+            \label{tab:quadro_regras_negocio}
+            \begin{tabular}{| L{3cm} | L{11cm} | }
+                \hline
+                \textbf{RN-01} & Quando a leitura de umidade for realizada e a umidade estiver igual ou acima do
+                nível estipulado, nada deve ser feito.\\
+                \hline
+
+                \hline
+                \textbf{RN-02} & Quando a umidade estiver abaixo do nível estipulado, inicie a irrigação e realize leituras
+                a cada segundo. Pare a irrigação quando o nível máximo for atingido.\\
+                \hline
+
+                \hline
+                \textbf{RN-03} & Quando a leitura de umidade for realizada e o nível estiver abaixo do nível
+                configurado, apaga a luz de umidade alta.\\
+                \hline
+
+                \hline
+                \textbf{RN-04} & Quando a leitura de umidade for realizada e o nível estiver acima do nível
+                configurado, acende a luz de umidade alta.\\
+                \hline
+
+                \hline
+                \textbf{RN-05} & Quando a leitura de luminosidade for realizada e a quantidade de luz já estiver
+                insuficiente, o teto retrátil permanece aberto.\\
+                \hline
+
+                \hline
+                \textbf{RN-06} & Quando a leitura de luminosidade for realizada e a quantidade de luz já estiver
+                insuficiente, o teto retrátil permanece aberto.\\
+                \hline
+
+                \hline
+                \textbf{RN-07} & As informações captadas pelos sensores devem ser disponibilizadas para visualização
+                no aplicativo Smart Life.\\
+                \hline
+
+            \end{tabular}
+            \vspace{2mm}
+        \end{table}
+
+\newpage
+
+    \section{Especificação formal utilizando notação Z}
+
+        \subsection{Definição de constantes e tipos}
+
+            \begin{tabular}{|l}
+                Status ::= LIGADO | DESLIGADO     \\
+                CorLed :: == VERDE | VERMELHO     \\
+                TetoRetratil ::= ABERTO | FECHADO
+            \end{tabular}
+
+
+        \subsection{Esquemas estáticos}
+
+            \begin{schema}{IndicadorUmidade}
+                leituraUmidade: \nat \\
+                luzUmidade: CorLed \\
+                umidadeMinima: \nat \\
+                umidadeIdeal: \nat \\
+            \where
+                leituraUmidade \geq umidadeMinima \\
+                leituraUmidade \leq umidadeIdeal \\
+                luzUmidade = VERDE \iff leitura = umidadeIdeal \\
+            \end{schema}
+
+            \begin{schema}{Irrigador}
+                IndicadorUmidade \\
+                estadoIrrigador: Status\\
+            \where
+                estadoIrrigador = LIGADO \iff luzUmidade = VERMELHO \\
+            \end{schema}
+
+            \begin{schema}{KitSensorLuminosidade}
+                tempoLuzLido: \nat \\
+                tempoLusIdeal: \nat \\
+            \where
+                tempoLuzLido \leq tempoLuminosidadeIdeal \\
+            \end{schema}
+
+            \begin{schema}{ControleLuminosidadeTeto}
+                KitSensorLuminosidade \\
+                EstadoTetoRetratil : TetoRetratil \\
+            \where
+                EstadoTetoRetratil = FECHADO \iff tempoLuzLido > tempoLusIdeal \\
+            \end{schema}
+
+            \begin{schema}{KitArduino}
+                SensorUmidade \\
+                ReleIrrigacao \\
+                KitSensorLuminosidade \\
+                ReleTetoRetratil \\
+                dadosSincronizacao : \seq Caracter \\
+            \end{schema}
+
+        \subsection{Inicialização dos Esquemas Estáticos}
+
+            \begin{schema}{InitIndicadorUmidade}
+                \Delta IndicadorUmidade \\
+            \where
+                umidadeMinima = 60 \\
+                umidadeIdeal = 65 \\
+                luzUmidade = VERDE \\
+            \end{schema}
+
+            \begin{schema}{InitIrrigador}
+                \Delta Irrigador \\
+            \where
+                estadoIrrigador = DESLIGADO \\
+            \end{schema}
+
+            \begin{schema}{InitKitSensorLuminosidade}
+                \Delta KitSensorLuminosidade \\
+            \where
+                tempoLusIdeal = 6 \\
+            \end{schema}
+
+            \begin{schema}{InitControleLuminosidadeTeto}
+                \Delta ControleLuminosidadeTeto \\
+            \where
+                EstadoTetoRetratil = ABERTO \\
+            \end{schema}
+
+            \begin{schema}{InitKitArduino}
+                \Delta KitArduino \\
+            \where
+                leituraUmidade = 0\\
+                tempoLuzLido  = 0\\
+                dadosSincronizacao = \emptyset \\
+            \end{schema}
+
+        \subsection{Esquemas dinâmicos}
+            ---------------------------------------------------------------------------------------------------------------------
+            Este é o modelo para criação de esquemas dinâmicos e deve ser copiado e replicado ao criar os seus modelos
+            \begin{schema}{Model}
+                \Delta model' \\
+                edit ?: Status \\
+                luzUmidade ?: CorLed \\
+                read !: \nat \\                
+            \where
+                \\
+            \end{schema}
+            ---------------------------------------------------------------------------------------------------------------------
+                - ColetarInformacoesUmidade
+                - IniciaIrrigacao
+                - ParaIrrigacao
+                - AcenderLedVermelho
+                - AcenderLedVerde
+                - ColetarInformacoesTempoLuz
+                - AbrirTetoRetratil
+                - FecharTetoRetratil
+                - 
+                - 
+                - 
+            ---------------------------------------------------------------------------------------------------------------------            
+
+
+            Este esquema representa a rotina de alterar o estado do irrigador e da luz de umidade conforme a leitura do sensor de umidade.
+
+            \begin{schema}{Irrigar}
+                \Delta KitArduino' \\
+                estadoIrrigador ?: Status \\
+                luzUmidade ?: CorLed \\
+                leituraUmidade !: \nat \\
+                umidadeMinima !: \nat \\
+                umidadeIdeal !: \nat \\
+            \where
+                estadoIrrigador' = LIGADO \iff leituraUmidade \leq umidadeMinima \\
+                estadoIrrigador' = DESLIGADO \iff leituraUmidade \geq umidadeIdeal \\
+                luzUmidade' = VERDE \iff leituraUmidade \geq umidadeIdeal \\
+                luzUmidade' = VERMELHO \iff leituraUmidade \leq umidadeIdeal \\
+            \end{schema}
+
+
+            Este esquema representa a rotina de controle de abertura/fechamento do teto retratil da horta, permitindo que a horta receba apenas a quantidade de luz ideal para seu desenvolvimento.
+
+            \begin{schema}{ControlarTetoRetratil}
+                \Delta KitArduino' \\
+                EstadoTetoRetratil ?: TetoRetratil \\
+                tempoLuzLido !: \nat \\
+                tempoLusIdeal !: \nat \\
+            \where
+                EstadoTetoRetratil' = ABERTO \iff tempoLuzLido \leq tempoLusIdeal \\
+                EstadoTetoRetratil' = FECHADO \iff tempoLuzLido > tempoLusIdeal \\
+            \end{schema}
+
+
+            Este esquema representa a rotina de envio de informações para o aplicativo Smart Life.
+
+            \begin{schema}{EnviarDadosSmartLife}
+                KitArduino \\
+                dadosSincronizacao !: \seq Caracter \\
+            \where
+                EnviarDadosAPI(dadosSincronizacao) \\
+            \end{schema}
+
