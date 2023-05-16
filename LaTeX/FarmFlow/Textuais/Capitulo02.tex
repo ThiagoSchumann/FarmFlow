@@ -22,7 +22,7 @@
                 \hline
 
                 \hline
-                \textbf{RF-05} & o Software deve controlar o teto retrátil.\\
+                \textbf{RF-05} & O Software deve controlar o teto retrátil.\\
                 \hline
 
                 \hline
@@ -40,37 +40,28 @@
             \label{tab:quadro_regras_negocio}
             \begin{tabular}{| L{3cm} | L{11cm} | }
                 \hline
-                \textbf{RN-01} & Quando a leitura de umidade for realizada e a umidade estiver igual ou acima do
-                nível estipulado, nada deve ser feito.\\
+                \textbf{RN-01} & A leitura de umidade referente ao sensor deve realizar leituras a cada 45 minutos.\\
                 \hline
 
                 \hline
-                \textbf{RN-02} & Quando a umidade estiver abaixo do nível estipulado, inicie a irrigação e realize leituras
-                a cada segundo. Pare a irrigação quando o nível máximo for atingido.\\
+                \textbf{RN-02} & Quando a leitura de umidade for realizada e a umidade estiver dentro dos limites, luz de umidade fica verde, se não, luz de umidade fica vermelha.\\
+                \hline                
+
+                \hline
+                \textbf{RN-03} & Quando a leitura da umidade estiver abaixo do nível estipulado, inicie a irrigação, realize leituras a cada segundo e pare a irrigação quando o nível mínimo for atingido. Pois o delay de 1 segundo fará com que o nível de umidade fique acima do nível mínimo.\\
                 \hline
 
                 \hline
-                \textbf{RN-03} & Quando a leitura de umidade for realizada e o nível estiver abaixo do nível
-                configurado, apaga a luz de umidade alta.\\
-                \hline
-
-                \hline
-                \textbf{RN-04} & Quando a leitura de umidade for realizada e o nível estiver acima do nível
-                configurado, acende a luz de umidade alta.\\
+                \textbf{RN-04} & A leitura de tempo de exposição a luz referente ao sensor deve realizar leituras a cada 45 minutos.\\
                 \hline
 
                 \hline
                 \textbf{RN-05} & Quando a leitura de luminosidade for realizada e a quantidade de luz já estiver
-                insuficiente, o teto retrátil permanece aberto.\\
+                insuficiente, o teto retrátil permanece aberto, se não, ele é fechado.\\
                 \hline
 
                 \hline
-                \textbf{RN-06} & Quando a leitura de luminosidade for realizada e a quantidade de luz já estiver
-                insuficiente, o teto retrátil permanece aberto.\\
-                \hline
-
-                \hline
-                \textbf{RN-07} & As informações captadas pelos sensores devem ser disponibilizadas para visualização
+                \textbf{RN-06} & As informações captadas pelos sensores devem ser disponibilizadas para visualização
                 no aplicativo Smart Life.\\
                 \hline
 
@@ -84,153 +75,186 @@
 
         \subsection{Definição de constantes e tipos}
 
-            \begin{tabular}{|l}
-                Status ::= LIGADO | DESLIGADO     \\
-                CorLed :: == VERDE | VERMELHO     \\
-                TetoRetratil ::= ABERTO | FECHADO
-            \end{tabular}
+            \begin{zed}
+                STATUS ::= LIGADO | DESLIGADO     \\
+                COR\_LED ::= VERDE | VERMELHO     \\
+                TETO\_RETRATIL ::= ABERTO | FECHADO \\    
+                UMIDADE\_MINIMA ::= 60 \\
+                UMIDADE\_IDEAL ::= 75 \\
+                COR\_LED\_INICIAL :: VERDE \\
+                STATUS\_INICIAL :: DESLIGADO \\
+                TEMPO\_LUZ\_IDEAL ::= 6 \\
+                TETO\_RETRATIL\_INICIAL ::= ABERTO \\
+                VAZIO :: = \emptyset \\
+                [DATA\_HORA]            
+            \end{zed}                 
 
 
         \subsection{Esquemas estáticos}
 
-            \begin{schema}{IndicadorUmidade}
-                leituraUmidade: \nat \\
-                luzUmidade: CorLed \\
+            Esquema que define o Sensor de Umidade.
+            \begin{schema}{SensorUmidade}
+                umidadeLida: \nat\\
+                dataHoraUmidadeLida: DATA\_HORA \\ 
                 umidadeMinima: \nat \\
-                umidadeIdeal: \nat \\
+                umidadeIdeal: \nat \\            
+            \where 
+                umidadeLida \in umidadeMinima .. umidadeIdeal \\
+            \end{schema}
+            
+
+            Esquema que define o Sistema referente ao funcionamento do Led de Umidade.
+            \begin{schema}{SistemaLedUmidade}
+                leituraUmidade: \nat \\ 
+                estadoLuzUmidade: COR\_LED \\
             \where
-                leituraUmidade \geq umidadeMinima \\
-                leituraUmidade \leq umidadeIdeal \\
-                luzUmidade = VERDE \iff leitura = umidadeIdeal \\
+                estadoLuzUmidade = VERDE \iff umidadeLida \in umidadeMinima .. umidadeIdeal \\
+                estadoLuzUmidade = VERMELHA \iff umidadeLida \notin umidadeMinima .. umidadeIdeal \\
+            \end{schema}
+            
+            Esquema que define o Sistema referente ao funcionamento da Irrigação.
+            \begin{schema}{SistemaIrrigacao}
+                leituraUmidade: \nat \\ 
+                estadoIrrigador: STATUS\\
+            \where
+                estadoIrrigador = LIGADO \iff umidadeLida < umidadeMinima \\
+                estadoIrrigador = DESLIGADO \iff umidadeLida \geq umidadeMinima \\
             \end{schema}
 
-            \begin{schema}{Irrigador}
-                IndicadorUmidade \\
-                estadoIrrigador: Status\\
-            \where
-                estadoIrrigador = LIGADO \iff luzUmidade = VERMELHO \\
+            \newpage
+            Esquema que define o Sensor de Luminosidade.
+            \begin{schema}{SensorLuminosidade}
+                tempoLuzLidoDia: \nat \\
+                tempoLuzIdeal: \nat \\               
+            \where 
+                 tempoLuzLido \leq tempoLuzIdeal \\
             \end{schema}
 
-            \begin{schema}{KitSensorLuminosidade}
-                tempoLuzLido: \nat \\
-                tempoLusIdeal: \nat \\
+            Esquema que define o Sistema referente ao funcionamento do Teto Retrátil.
+            \begin{schema}{SistemaTetoRetratil}
+                leituraLuminosidade: \nat \\ 
+                estadoTetoRetratil : TETO\_RETRATIL \\
             \where
-                tempoLuzLido \leq tempoLuminosidadeIdeal \\
+                estadoTetoRetratil = ABERTO \iff tempoLuzLido \leq tempoLuzIdeal \\
+                estadoTetoRetratil = FECHADO \iff tempoLuzLido > tempoLuzIdeal \\
             \end{schema}
 
-            \begin{schema}{ControleLuminosidadeTeto}
-                KitSensorLuminosidade \\
-                EstadoTetoRetratil : TetoRetratil \\
-            \where
-                EstadoTetoRetratil = FECHADO \iff tempoLuzLido > tempoLusIdeal \\
-            \end{schema}
-
+            Esquema que define o agrupamento dos componentes junto ao Kit Arduíno.
             \begin{schema}{KitArduino}
-                SensorUmidade \\
-                ReleIrrigacao \\
-                KitSensorLuminosidade \\
-                ReleTetoRetratil \\
-                dadosSincronizacao : \seq Caracter \\
+                SensorUmidade \land
+                SistemaLedUmidade \land 
+                SistemaIrrigacao \land \\
+                SensorLuminosidade \land 
+                SistemaTetoRetratil \\
             \end{schema}
 
         \subsection{Inicialização dos Esquemas Estáticos}
 
-            \begin{schema}{InitIndicadorUmidade}
-                \Delta IndicadorUmidade \\
-            \where
-                umidadeMinima = 60 \\
-                umidadeIdeal = 65 \\
-                luzUmidade = VERDE \\
-            \end{schema}
+		\begin{schema}{initSensorUmidade}
+			\Delta SensorUmidade \\
+        \where
+			UmidadeLida: VAZIO\\
+            dataHoraUmidadeLida: VAZIO\\
+			umidadeMinima: UMIDADE\_MINIMA \\
+			umidadeIdeal: UMIDADE\_IDEAL \\   
+		\end{schema}
 
-            \begin{schema}{InitIrrigador}
-                \Delta Irrigador \\
-            \where
-                estadoIrrigador = DESLIGADO \\
-            \end{schema}
+		\begin{schema}{initSistemaLedUmidade}
+			\Delta SistemaLedUmidade \\
+        \where
+			leituraUmidade: VAZIO \\ 
+			EstadoLuzUmidade: COR\_LED\_INICIAL \\
+		\end{schema}
 
-            \begin{schema}{InitKitSensorLuminosidade}
-                \Delta KitSensorLuminosidade \\
-            \where
-                tempoLusIdeal = 6 \\
-            \end{schema}
+		\begin{schema}{initSistemaIrrigacao}
+			\Delta SistemaIrrigacao \\
+        \where
+			leituraUmidade: VAZIO \\ 
+			estadoIrrigador: STATUS\_INICIAL \\ 
+		\end{schema}
 
-            \begin{schema}{InitControleLuminosidadeTeto}
-                \Delta ControleLuminosidadeTeto \\
+		\begin{schema}{initSensorLuminosidade}
+			\Delta SensorLuminosidade \\
             \where
-                EstadoTetoRetratil = ABERTO \\
-            \end{schema}
+			tempoLuzLidoDia: VAZIO \\ 
+			tempoLuzIdeal: TEMPO\_LUZ\_IDEAL \\   
+		\end{schema}
 
-            \begin{schema}{InitKitArduino}
-                \Delta KitArduino \\
-            \where
-                leituraUmidade = 0\\
-                tempoLuzLido  = 0\\
-                dadosSincronizacao = \emptyset \\
-            \end{schema}
+		\begin{schema}{initSistemaTetoRetratil}
+			\Delta SistemaTetoRetratil \\
+        \where
+			leituraLuminosidade: VAZIO \\ 
+			estadoTetoRetratil : TETO\_RETRATIL\_INICIAL \\ 
+		\end{schema}
+
+		\begin{schema}{initKitArduino}
+			initSensorUmidade \land 
+			initSistemaLedUmidade \land 
+			initSistemaIrrigacao \land \\
+			initSensorLuminosidade \land 
+			initSistemaTetoRetratil 
+		\end{schema}
+
 
         \subsection{Esquemas dinâmicos}
-            ---------------------------------------------------------------------------------------------------------------------
-            Este é o modelo para criação de esquemas dinâmicos e deve ser copiado e replicado ao criar os seus modelos
-            \begin{schema}{Model}
-                \Delta model' \\
-                edit ?: Status \\
-                luzUmidade ?: CorLed \\
-                read !: \nat \\                
+            
+            Esquema que representa a rotina de coleta das informações do sensor de umidade.
+            \begin{schema}{ColetarInformacoesSensorUmidade}
+                \Delta SensorUmidade' \\
+                leituraSensorUmidade? : \nat \\
+                dataHoraAtual? : DATA\_HORA \\
             \where
-                \\
-            \end{schema}
-            ---------------------------------------------------------------------------------------------------------------------
-                - ColetarInformacoesUmidade
-                - IniciaIrrigacao
-                - ParaIrrigacao
-                - AcenderLedVermelho
-                - AcenderLedVerde
-                - ColetarInformacoesTempoLuz
-                - AbrirTetoRetratil
-                - FecharTetoRetratil
-                - 
-                - 
-                - 
-            ---------------------------------------------------------------------------------------------------------------------            
-
-
-            Este esquema representa a rotina de alterar o estado do irrigador e da luz de umidade conforme a leitura do sensor de umidade.
-
-            \begin{schema}{Irrigar}
-                \Delta KitArduino' \\
-                estadoIrrigador ?: Status \\
-                luzUmidade ?: CorLed \\
-                leituraUmidade !: \nat \\
-                umidadeMinima !: \nat \\
-                umidadeIdeal !: \nat \\
-            \where
-                estadoIrrigador' = LIGADO \iff leituraUmidade \leq umidadeMinima \\
-                estadoIrrigador' = DESLIGADO \iff leituraUmidade \geq umidadeIdeal \\
-                luzUmidade' = VERDE \iff leituraUmidade \geq umidadeIdeal \\
-                luzUmidade' = VERMELHO \iff leituraUmidade \leq umidadeIdeal \\
+                umidadeLida' = leituraSensorUmidade? \\
+                dataHoraUmidadeLida' = dataHoraAtual? \\
             \end{schema}
 
-
-            Este esquema representa a rotina de controle de abertura/fechamento do teto retratil da horta, permitindo que a horta receba apenas a quantidade de luz ideal para seu desenvolvimento.
-
-            \begin{schema}{ControlarTetoRetratil}
-                \Delta KitArduino' \\
-                EstadoTetoRetratil ?: TetoRetratil \\
-                tempoLuzLido !: \nat \\
-                tempoLusIdeal !: \nat \\
+            \newpage
+            Esquema que representa a rotina de controle sobre a luz da umidade.
+            \begin{schema}{MudarCorLedUmidade}
+                \Delta SistemaLedUmidade' \\
+                umidadeLida? : \nat \\
             \where
-                EstadoTetoRetratil' = ABERTO \iff tempoLuzLido \leq tempoLusIdeal \\
-                EstadoTetoRetratil' = FECHADO \iff tempoLuzLido > tempoLusIdeal \\
+                umidadeLida \in umidadeMinima .. umidadeIdeal \implies estadoLuzUmidade' = VERDE \\
+                \lor \\
+                umidadeLida \notin umidadeMinima .. umidadeIdeal \implies estadoLuzUmidade' = VERMELHA \\
+            \end{schema}            
+
+            Esquema que define o Sistema referente ao funcionamento da Irrigação, quando liga, repete por a rotina 
+            ColetarInformacoesSensorUmidade a cada 1 segundo, e ao atingir a umidade mínima, para de regar. Pois o delay de 1 segundo
+            fará com que a umidade suba além do mínimo ficando em um nível aceitável.
+            \begin{schema}{ControlarSistemaIrrigacao}
+                \Delta SistemaIrrigacao' \\
+                umidadeLida?: \nat \\ 
+            \where
+                umidadeLida < umidadeMinima \implies estadoIrrigador = LIGADO  \\
+                \lor \\
+                umidadeLida \geq umidadeMinima \implies estadoIrrigador = DESLIGADO  \\
             \end{schema}
 
+            Esquema que representa a rotina de coleta das informações do sensor de luminosidade.
+            \begin{schema}{ColetarInformacoesSensorLuminosidade}
+                \Delta SensorLuminosidade' \\
+                leituraSensorLuminosidade? : \nat \\
+            \where
+                tempoLuzLidoDia' = leituraSensorLuminosidade? \\
+            \end{schema}            
 
+            Esquema que representa a rotina de controle do teto retrátil.
+            \begin{schema}{ControlarSistemaTetoRetratil}
+                \Delta SistemaTetoRetratil' \\
+                tempoLuzLido?: \nat \\             
+            \where
+                tempoLuzLido \leq tempoLuzIdeal\implies estadoTetoRetratil = ABERTO \\
+                \lor \\
+                tempoLuzLido > tempoLuzIdeal \implies estadoTetoRetratil = FECHADO \\
+            \end{schema}
+
+            \newpage
             Este esquema representa a rotina de envio de informações para o aplicativo Smart Life.
-
             \begin{schema}{EnviarDadosSmartLife}
-                KitArduino \\
-                dadosSincronizacao !: \seq Caracter \\
+                \Xi KitArduino \\
+                dadosSincronizacao! : \seq \\
             \where
-                EnviarDadosAPI(dadosSincronizacao) \\
+                dadosSincronizacao! = DadosSincronizacao\\
+                POST\_API(dadosSincronizacao!)
             \end{schema}
-
